@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Position Size Calculator</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap");
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        background: #0d0d0d;
+        color: #e8e8e8;
+        font-family: "IBM Plex Mono", monospace;
+        -webkit-font-smoothing: antialiased;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      .wrap {
+        width: 100%;
+        max-width: 420px;
+        animation: up 0.4s ease both;
+      }
+      @keyframes up {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .sub {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 24px;
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+      .card {
+        background: #161616;
+        border: 1px solid #222;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 14px;
+        font-weight: 500;
+      }
+      .field {
+        margin-bottom: 12px;
+      }
+      .field:last-child {
+        margin-bottom: 0;
+      }
+      .field label {
+        display: block;
+        font-size: 11px;
+        color: #777;
+        font-family: "IBM Plex Sans", sans-serif;
+        margin-bottom: 5px;
+      }
+      input[type="number"] {
+        width: 100%;
+        background: #0d0d0d;
+        border: 1px solid #222;
+        border-radius: 6px;
+        color: #e8e8e8;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 15px;
+        padding: 9px 12px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        -moz-appearance: textfield;
+      }
+      input[type="number"]::-webkit-inner-spin-button,
+      input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+      }
+      input[type="number"]:focus {
+        border-color: #c8f135;
+        box-shadow: 0 0 0 3px rgba(200, 241, 53, 0.07);
+      }
+      input[type="number"]::placeholder {
+        color: #444;
+      }
+      .toggle {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .toggle button {
+        flex: 1;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #222;
+        background: #0d0d0d;
+        color: #666;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .toggle button.active-long {
+        border-color: #c8f135;
+        color: #c8f135;
+        background: rgba(200, 241, 53, 0.06);
+      }
+      .toggle button.active-short {
+        border-color: #ff6b6b;
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.06);
+      }
+      .results {
+        background: #111;
+        border: 1px solid #1e1e1e;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 12px;
+        display: none;
+      }
+      .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+      .metric-label {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #555;
+        margin-bottom: 4px;
+      }
+      .metric-val {
+        font-size: 26px;
+        font-weight: 500;
+        color: #e8e8e8;
+      }
+      .metric-unit {
+        font-size: 11px;
+        color: #555;
+        margin-top: 2px;
+      }
+      .meta {
+        border-top: 1px solid #1e1e1e;
+        padding-top: 12px;
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .meta-item span:first-child {
+        font-size: 11px;
+        color: #555;
+      }
+      .meta-item span:last-child {
+        font-size: 12px;
+        font-weight: 500;
+        color: #aaa;
+        margin-left: 4px;
+      }
+      .error {
+        background: rgba(255, 77, 77, 0.08);
+        border: 1px solid rgba(255, 77, 77, 0.25);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 12px;
+        color: #ff6b6b;
+        margin-bottom: 12px;
+        display: none;
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+      .pct-btn {
+        padding: 4px 10px;
+        border-radius: 5px;
+        border: 1px solid #222;
+        background: #0d0d0d;
+        color: #777;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .pct-btn:hover {
+        border-color: #c8f135;
+        color: #c8f135;
+      }
+      .reset {
+        font-size: 12px;
+        color: #444;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .reset:hover {
+        color: #777;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 10px;
+        padding: 2px 7px;
+        border-radius: 4px;
+        margin-left: 6px;
+        vertical-align: middle;
+      }
+      .tag-long {
+        background: rgba(200, 241, 53, 0.1);
+        color: #c8f135;
+      }
+      .tag-short {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Position Size Calculator</h1>
+      <p class="sub">Stored locally on your device — nothing sent anywhere.</p>
+
+      <div class="card">
+        <div class="card-title">Account</div>
+        <div class="field">
+          <label>Account size ($)</label>
+          <input
+            type="number"
+            id="account"
+            placeholder="10000"
+            min="0"
+            step="100"
+          />
+        </div>
+        <div class="field">
+          <label>Risk per trade (account %)</label>
+          <input
+            type="number"
+            id="riskPct"
+            placeholder="1"
+            min="0.01"
+            max="100"
+            step="0.1"
+          />
+          <div style="display: flex; gap: 6px; margin-top: 8px">
+            <button class="pct-btn" onclick="setRisk(0.5)">0.5%</button>
+            <button class="pct-btn" onclick="setRisk(1)">1%</button>
+            <button class="pct-btn" onclick="setRisk(2)">2%</button>
+            <button class="pct-btn" onclick="setRisk(3)">3%</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Trade</div>
+        <div class="toggle">
+          <button id="btnLong" onclick="setDir('long')">▲ Long</button>
+          <button id="btnShort" onclick="setDir('short')">▼ Short</button>
+        </div>
+        <div class="field">
+          <label>Entry price</label>
+          <input
+            type="number"
+            id="entry"
+            placeholder="0.00"
+            min="0"
+            step="any"
+          />
+        </div>
+        <div class="field">
+          <label>Stop loss price</label>
+          <input
+            type="number"
+            id="stop"
+            placeholder="0.00"
+            min="0"
+            step="any"
+          />
+        </div>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="results" id="results">
+        <div class="results-grid">
+          <div>
+            <div class="metric-label">
+              Position size <span class="tag" id="dirTag">Long</span>
+            </div>
+            <div class="metric-val" id="units">—</div>
+            <div class="metric-unit">units</div>
+          </div>
+          <div>
+            <div class="metric-label">Dollar risk</div>
+            <div class="metric-val" id="dollarRisk">—</div>
+            <div class="metric-unit">at risk</div>
+          </div>
+        </div>
+        <div class="meta">
+          <div class="meta-item">
+            <span>Risk/unit</span><span id="riskPerUnit">—</span>
+          </div>
+          <div class="meta-item">
+            <span>Position value</span><span id="totalValue">—</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="reset" onclick="resetAll()">Clear saved values</button>
+    </div>
+
+    <script>
+      const ids = ["account", "riskPct", "entry", "stop"];
+      let dir = localStorage.getItem("ps_dir") || "long";
+
+      function fmt(n, dec = 2) {
+        return (
+          "$" +
+          Number(n).toLocaleString("en-US", {
+            minimumFractionDigits: dec,
+            maximumFractionDigits: dec,
+          })
+        );
+      }
+
+      function setDir(d) {
+        dir = d;
+        localStorage.setItem("ps_dir", d);
+        document.getElementById("btnLong").className =
+          d === "long" ? "active-long" : "";
+        document.getElementById("btnShort").className =
+          d === "short" ? "active-short" : "";
+        calc();
+      }
+
+      function calc() {
+        const account = parseFloat(document.getElementById("account").value);
+        const riskPct = parseFloat(document.getElementById("riskPct").value);
+        const entry = parseFloat(document.getElementById("entry").value);
+        const stop = parseFloat(document.getElementById("stop").value);
+        const err = document.getElementById("error");
+        const res = document.getElementById("results");
+
+        if (!account || !riskPct || !entry || !stop) {
+          err.style.display = "none";
+          res.style.display = "none";
+          return;
+        }
+
+        if (dir === "long" && stop >= entry) {
+          err.textContent =
+            "For a long trade, stop loss must be below entry price.";
+          err.style.display = "block";
+          res.style.display = "none";
+          return;
+        }
+        if (dir === "short" && stop <= entry) {
+          err.textContent =
+            "For a short trade, stop loss must be above entry price.";
+          err.style.display = "block";
+          res.style.display = "none";
+          return;
+        }
+
+        err.style.display = "none";
+
+        const dollarRisk = account * (riskPct / 100);
+        const riskPerUnit = Math.abs(entry - stop);
+        const units = dollarRisk / riskPerUnit;
+        const totalVal = units * entry;
+
+        const tag = document.getElementById("dirTag");
+        tag.textContent = dir === "long" ? "Long" : "Short";
+        tag.className = "tag " + (dir === "long" ? "tag-long" : "tag-short");
+
+        document.getElementById("units").textContent =
+          units >= 1 ? Math.round(units).toLocaleString() : units.toFixed(4);
+        document.getElementById("dollarRisk").textContent = fmt(dollarRisk);
+        document.getElementById("riskPerUnit").textContent = fmt(riskPerUnit);
+        document.getElementById("totalValue").textContent = fmt(totalVal, 0);
+        res.style.display = "block";
+      }
+
+      function setRisk(v) {
+        const el = document.getElementById("riskPct");
+        el.value = v;
+        localStorage.setItem("ps_riskPct", v);
+        calc();
+      }
+
+      ids.forEach((id) => {
+        document.getElementById(id).addEventListener("input", (e) => {
+          localStorage.setItem("ps_" + id, e.target.value);
+          calc();
+        });
+      });
+
+      function resetAll() {
+        ids.forEach((id) => {
+          localStorage.removeItem("ps_" + id);
+          document.getElementById(id).value = "";
+        });
+        localStorage.removeItem("ps_dir");
+        dir = "long";
+        setDir("long");
+        document.getElementById("results").style.display = "none";
+        document.getElementById("error").style.display = "none";
+      }
+
+      ids.forEach((id) => {
+        const v = localStorage.getItem("ps_" + id);
+        if (v) document.getElementById(id).value = v;
+      });
+      setDir(dir);
+      calc();
+    </script>
+  </body>
+</html>
