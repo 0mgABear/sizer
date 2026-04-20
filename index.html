@@ -15,7 +15,6 @@
       }
       html,
       body {
-        height: 100%;
         background: #0d0d0d;
         color: #e8e8e8;
         font-family: "IBM Plex Mono", monospace;
@@ -30,7 +29,7 @@
       }
       .wrap {
         width: 100%;
-        max-width: 420px;
+        max-width: 440px;
         animation: up 0.4s ease both;
       }
       @keyframes up {
@@ -108,32 +107,64 @@
       input[type="number"]::placeholder {
         color: #444;
       }
-      .toggle {
+      .mode-toggle {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         margin-bottom: 14px;
       }
-      .toggle button {
+      .mode-toggle button {
         flex: 1;
-        padding: 8px;
+        padding: 8px 4px;
         border-radius: 6px;
         border: 1px solid #222;
         background: #0d0d0d;
         color: #666;
         font-family: "IBM Plex Mono", monospace;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.15s;
       }
-      .toggle button.active-long {
+      .mode-toggle button.active-long {
         border-color: #c8f135;
         color: #c8f135;
         background: rgba(200, 241, 53, 0.06);
       }
-      .toggle button.active-short {
+      .mode-toggle button.active-short {
         border-color: #ff6b6b;
         color: #ff6b6b;
         background: rgba(255, 107, 107, 0.06);
+      }
+      .mode-toggle button.active-buy {
+        border-color: #7eb8f7;
+        color: #7eb8f7;
+        background: rgba(126, 184, 247, 0.06);
+      }
+      .mode-toggle button.active-sell {
+        border-color: #c084fc;
+        color: #c084fc;
+        background: rgba(192, 132, 252, 0.06);
+      }
+      .sub-toggle {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .sub-toggle button {
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px solid #222;
+        background: #0d0d0d;
+        color: #666;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .sub-toggle button.active {
+        border-color: #c084fc;
+        color: #c084fc;
+        background: rgba(192, 132, 252, 0.06);
       }
       .results {
         background: #111;
@@ -170,18 +201,34 @@
         border-top: 1px solid #1e1e1e;
         padding-top: 12px;
         display: flex;
-        gap: 20px;
+        gap: 16px;
         flex-wrap: wrap;
       }
-      .meta-item span:first-child {
-        font-size: 11px;
+      .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .meta-item .ml {
+        font-size: 10px;
         color: #555;
       }
-      .meta-item span:last-child {
+      .meta-item .mv {
         font-size: 12px;
         font-weight: 500;
         color: #aaa;
-        margin-left: 4px;
+      }
+      .warn {
+        background: rgba(251, 191, 36, 0.06);
+        border: 1px solid rgba(251, 191, 36, 0.2);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 11px;
+        color: #fbbf24;
+        margin-bottom: 12px;
+        font-family: "IBM Plex Sans", sans-serif;
+        line-height: 1.5;
+        display: none;
       }
       .error {
         background: rgba(255, 77, 77, 0.08);
@@ -208,6 +255,13 @@
       .pct-btn:hover {
         border-color: #c8f135;
         color: #c8f135;
+      }
+      .hint {
+        font-size: 11px;
+        color: #555;
+        font-family: "IBM Plex Sans", sans-serif;
+        margin-top: 6px;
+        line-height: 1.5;
       }
       .reset {
         font-size: 12px;
@@ -238,6 +292,14 @@
       .tag-short {
         background: rgba(255, 107, 107, 0.1);
         color: #ff6b6b;
+      }
+      .tag-buy {
+        background: rgba(126, 184, 247, 0.1);
+        color: #7eb8f7;
+      }
+      .tag-sell {
+        background: rgba(192, 132, 252, 0.1);
+        color: #c084fc;
       }
     </style>
   </head>
@@ -279,165 +341,485 @@
 
       <div class="card">
         <div class="card-title">Trade</div>
-        <div class="toggle">
-          <button id="btnLong" onclick="setDir('long')">▲ Long</button>
-          <button id="btnShort" onclick="setDir('short')">▼ Short</button>
+        <div class="mode-toggle">
+          <button id="btnLong" onclick="setMode('long')">▲ Long</button>
+          <button id="btnShort" onclick="setMode('short')">▼ Short</button>
+          <button id="btnBuy" onclick="setMode('buy')">◆ Buy option</button>
+          <button id="btnSell" onclick="setMode('sell')">◇ Sell option</button>
         </div>
-        <div class="field">
-          <label>Entry price</label>
-          <input
-            type="number"
-            id="entry"
-            placeholder="0.00"
-            min="0"
-            step="any"
-          />
+
+        <div id="spotFields">
+          <div class="field">
+            <label>Entry price</label>
+            <input
+              type="number"
+              id="entry"
+              placeholder="0.00"
+              min="0"
+              step="any"
+            />
+          </div>
+          <div class="field">
+            <label>Stop loss price</label>
+            <input
+              type="number"
+              id="stop"
+              placeholder="0.00"
+              min="0"
+              step="any"
+            />
+          </div>
         </div>
-        <div class="field">
-          <label>Stop loss price</label>
-          <input
-            type="number"
-            id="stop"
-            placeholder="0.00"
-            min="0"
-            step="any"
-          />
+
+        <div id="buyFields" style="display: none">
+          <div class="field">
+            <label>Option premium ($ per share)</label>
+            <input
+              type="number"
+              id="buyPremium"
+              placeholder="2.50"
+              min="0"
+              step="any"
+            />
+            <p class="hint">
+              Each contract = 100 shares. Max loss = premium paid.
+            </p>
+          </div>
+        </div>
+
+        <div id="sellFields" style="display: none">
+          <div class="sub-toggle">
+            <button id="sCov" onclick="setSell('covered')">Covered call</button>
+            <button id="sCsp" onclick="setSell('csp')">Cash-secured put</button>
+            <button id="sNaked" onclick="setSell('naked')">Naked</button>
+          </div>
+
+          <div id="sfCovered" style="display: none">
+            <div class="field">
+              <label>Stock purchase price ($)</label>
+              <input
+                type="number"
+                id="covStock"
+                placeholder="150.00"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="field">
+              <label>Call premium received ($ per share)</label>
+              <input
+                type="number"
+                id="covPremium"
+                placeholder="2.00"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="field">
+              <label>Strike price</label>
+              <input
+                type="number"
+                id="covStrike"
+                placeholder="155.00"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+
+          <div id="sfCsp" style="display: none">
+            <div class="field">
+              <label>Strike price (put)</label>
+              <input
+                type="number"
+                id="cspStrike"
+                placeholder="140.00"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="field">
+              <label>Premium received ($ per share)</label>
+              <input
+                type="number"
+                id="cspPremium"
+                placeholder="2.00"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
+
+          <div id="sfNaked" style="display: none">
+            <div class="field">
+              <label>Strike price</label>
+              <input
+                type="number"
+                id="nakStrike"
+                placeholder="150.00"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="field">
+              <label>Premium received ($ per share)</label>
+              <input
+                type="number"
+                id="nakPremium"
+                placeholder="3.00"
+                min="0"
+                step="any"
+              />
+            </div>
+            <div class="field">
+              <label>Margin required per contract ($)</label>
+              <input
+                type="number"
+                id="nakMargin"
+                placeholder="1500"
+                min="0"
+                step="any"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
+      <div class="warn" id="warn"></div>
       <div class="error" id="error"></div>
 
       <div class="results" id="results">
         <div class="results-grid">
           <div>
-            <div class="metric-label">
-              Position size <span class="tag" id="dirTag">Long</span>
-            </div>
-            <div class="metric-val" id="units">—</div>
-            <div class="metric-unit">units</div>
+            <div class="metric-label" id="r1label">Position size</div>
+            <div class="metric-val" id="r1val">—</div>
+            <div class="metric-unit" id="r1unit">units</div>
           </div>
           <div>
-            <div class="metric-label">Dollar risk</div>
-            <div class="metric-val" id="dollarRisk">—</div>
-            <div class="metric-unit">at risk</div>
+            <div class="metric-label" id="r2label">Dollar risk</div>
+            <div class="metric-val" id="r2val">—</div>
+            <div class="metric-unit" id="r2unit">at risk</div>
           </div>
         </div>
-        <div class="meta">
-          <div class="meta-item">
-            <span>Risk/unit</span><span id="riskPerUnit">—</span>
-          </div>
-          <div class="meta-item">
-            <span>Position value</span><span id="totalValue">—</span>
-          </div>
-        </div>
+        <div class="meta" id="metaRow"></div>
       </div>
 
       <button class="reset" onclick="resetAll()">Clear saved values</button>
     </div>
 
     <script>
-      const ids = ["account", "riskPct", "entry", "stop"];
-      let dir = localStorage.getItem("ps_dir") || "long";
+      const allIds = [
+        "account",
+        "riskPct",
+        "entry",
+        "stop",
+        "buyPremium",
+        "covStock",
+        "covPremium",
+        "covStrike",
+        "cspStrike",
+        "cspPremium",
+        "nakStrike",
+        "nakPremium",
+        "nakMargin",
+      ];
+      let mode = localStorage.getItem("ps_mode") || "long";
+      let sellSub = localStorage.getItem("ps_sellsub") || "covered";
 
-      function fmt(n, dec = 2) {
-        return (
-          "$" +
-          Number(n).toLocaleString("en-US", {
-            minimumFractionDigits: dec,
-            maximumFractionDigits: dec,
-          })
-        );
+      const fmt = (n, d = 2) =>
+        "$" +
+        Number(n).toLocaleString("en-US", {
+          minimumFractionDigits: d,
+          maximumFractionDigits: d,
+        });
+      const g = (id) => parseFloat(document.getElementById(id).value) || 0;
+      const show = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = v ? "block" : "none";
+      };
+
+      function clearResults() {
+        show("results", false);
+        show("error", false);
+        show("warn", false);
       }
 
-      function setDir(d) {
-        dir = d;
-        localStorage.setItem("ps_dir", d);
-        document.getElementById("btnLong").className =
-          d === "long" ? "active-long" : "";
-        document.getElementById("btnShort").className =
-          d === "short" ? "active-short" : "";
+      function setMeta(items) {
+        document.getElementById("metaRow").innerHTML = items
+          .map(
+            ([l, v]) =>
+              `<div class="meta-item"><span class="ml">${l}</span><span class="mv">${v}</span></div>`,
+          )
+          .join("");
+      }
+
+      function showResults(r1l, r1v, r1u, r2l, r2v, r2u, tag, tagClass, meta) {
+        document.getElementById("r1label").innerHTML =
+          r1l + ' <span class="tag ' + tagClass + '">' + tag + "</span>";
+        document.getElementById("r1val").textContent = r1v;
+        document.getElementById("r1unit").textContent = r1u;
+        document.getElementById("r2label").textContent = r2l;
+        document.getElementById("r2val").textContent = r2v;
+        document.getElementById("r2unit").textContent = r2u;
+        setMeta(meta);
+        show("results", true);
+      }
+
+      function setMode(m) {
+        mode = m;
+        localStorage.setItem("ps_mode", m);
+        ["Long", "Short", "Buy", "Sell"].forEach(
+          (x) => (document.getElementById("btn" + x).className = ""),
+        );
+        document.getElementById(
+          "btn" + m.charAt(0).toUpperCase() + m.slice(1),
+        ).className = "active-" + m;
+        show("spotFields", m === "long" || m === "short");
+        show("buyFields", m === "buy");
+        show("sellFields", m === "sell");
+        if (m === "sell") setSell(sellSub);
+        clearResults();
+        calc();
+      }
+
+      function setSell(s) {
+        sellSub = s;
+        localStorage.setItem("ps_sellsub", s);
+        ["sCov", "sCsp", "sNaked"].forEach(
+          (id) => (document.getElementById(id).className = ""),
+        );
+        const btnMap = { covered: "sCov", csp: "sCsp", naked: "sNaked" };
+        document.getElementById(btnMap[s]).className = "active";
+        ["sfCovered", "sfCsp", "sfNaked"].forEach((id) => show(id, false));
+        const fieldMap = {
+          covered: "sfCovered",
+          csp: "sfCsp",
+          naked: "sfNaked",
+        };
+        show(fieldMap[s], true);
+        clearResults();
         calc();
       }
 
       function calc() {
-        const account = parseFloat(document.getElementById("account").value);
-        const riskPct = parseFloat(document.getElementById("riskPct").value);
-        const entry = parseFloat(document.getElementById("entry").value);
-        const stop = parseFloat(document.getElementById("stop").value);
+        const account = g("account"),
+          riskPct = g("riskPct");
         const err = document.getElementById("error");
-        const res = document.getElementById("results");
-
-        if (!account || !riskPct || !entry || !stop) {
-          err.style.display = "none";
-          res.style.display = "none";
+        const wrn = document.getElementById("warn");
+        if (!account || !riskPct) {
+          clearResults();
           return;
         }
-
-        if (dir === "long" && stop >= entry) {
-          err.textContent =
-            "For a long trade, stop loss must be below entry price.";
-          err.style.display = "block";
-          res.style.display = "none";
-          return;
-        }
-        if (dir === "short" && stop <= entry) {
-          err.textContent =
-            "For a short trade, stop loss must be above entry price.";
-          err.style.display = "block";
-          res.style.display = "none";
-          return;
-        }
-
-        err.style.display = "none";
-
         const dollarRisk = account * (riskPct / 100);
-        const riskPerUnit = Math.abs(entry - stop);
-        const units = dollarRisk / riskPerUnit;
-        const totalVal = units * entry;
 
-        const tag = document.getElementById("dirTag");
-        tag.textContent = dir === "long" ? "Long" : "Short";
-        tag.className = "tag " + (dir === "long" ? "tag-long" : "tag-short");
+        if (mode === "long" || mode === "short") {
+          const entry = g("entry"),
+            stop = g("stop");
+          if (!entry || !stop) {
+            clearResults();
+            return;
+          }
+          if (mode === "long" && stop >= entry) {
+            err.textContent = "Stop loss must be below entry for a long.";
+            show("error", true);
+            show("results", false);
+            return;
+          }
+          if (mode === "short" && stop <= entry) {
+            err.textContent = "Stop loss must be above entry for a short.";
+            show("error", true);
+            show("results", false);
+            return;
+          }
+          show("error", false);
+          const rpu = Math.abs(entry - stop),
+            units = dollarRisk / rpu;
+          showResults(
+            "Position size",
+            units >= 1 ? Math.round(units).toLocaleString() : units.toFixed(4),
+            "units",
+            "Dollar risk",
+            fmt(dollarRisk),
+            "at risk",
+            mode === "long" ? "Long" : "Short",
+            mode === "long" ? "tag-long" : "tag-short",
+            [
+              ["Risk/unit", fmt(rpu)],
+              ["Position value", fmt(units * entry, 0)],
+            ],
+          );
+          return;
+        }
 
-        document.getElementById("units").textContent =
-          units >= 1 ? Math.round(units).toLocaleString() : units.toFixed(4);
-        document.getElementById("dollarRisk").textContent = fmt(dollarRisk);
-        document.getElementById("riskPerUnit").textContent = fmt(riskPerUnit);
-        document.getElementById("totalValue").textContent = fmt(totalVal, 0);
-        res.style.display = "block";
+        if (mode === "buy") {
+          const prem = g("buyPremium");
+          if (!prem) {
+            clearResults();
+            return;
+          }
+          const cpc = prem * 100,
+            contracts = dollarRisk / cpc;
+          show("error", false);
+          showResults(
+            "Contracts",
+            Math.round(contracts) < 1
+              ? "< 1"
+              : Math.round(contracts).toLocaleString(),
+            "contracts",
+            "Max loss",
+            fmt(dollarRisk),
+            "(premium paid)",
+            "Buy",
+            "tag-buy",
+            [
+              ["Cost/contract", fmt(cpc)],
+              ["Total premium", fmt(Math.round(contracts) * cpc, 0)],
+            ],
+          );
+          return;
+        }
+
+        if (mode === "sell") {
+          show("error", false);
+          show("warn", false);
+
+          if (sellSub === "covered") {
+            const stock = g("covStock"),
+              prem = g("covPremium"),
+              strike = g("covStrike");
+            if (!stock || !prem || !strike) {
+              clearResults();
+              return;
+            }
+            const maxLossPerShare = stock - prem;
+            const contracts = Math.floor(dollarRisk / (maxLossPerShare * 100));
+            const maxGain = (strike - stock + prem) * 100;
+            showResults(
+              "Contracts",
+              contracts < 1 ? "< 1" : contracts.toLocaleString(),
+              "contracts",
+              "Max loss",
+              fmt(maxLossPerShare * 100 * Math.max(contracts, 1), 0),
+              "if stock → 0",
+              "Sell",
+              "tag-sell",
+              [
+                ["Breakeven", fmt(stock - prem)],
+                ["Max gain/contract", fmt(maxGain, 0)],
+                [
+                  "Premium collected",
+                  fmt(prem * 100 * Math.max(contracts, 1), 0),
+                ],
+              ],
+            );
+            return;
+          }
+
+          if (sellSub === "csp") {
+            const strike = g("cspStrike"),
+              prem = g("cspPremium");
+            if (!strike || !prem) {
+              clearResults();
+              return;
+            }
+            const maxLoss = (strike - prem) * 100;
+            const contracts = Math.floor(dollarRisk / maxLoss);
+            showResults(
+              "Contracts",
+              contracts < 1 ? "< 1" : contracts.toLocaleString(),
+              "contracts",
+              "Max loss",
+              fmt(maxLoss * Math.max(contracts, 1), 0),
+              "if stock → 0",
+              "Sell",
+              "tag-sell",
+              [
+                ["Breakeven", fmt(strike - prem)],
+                ["Max loss/contract", fmt(maxLoss, 0)],
+                [
+                  "Premium collected",
+                  fmt(prem * 100 * Math.max(contracts, 1), 0),
+                ],
+              ],
+            );
+            return;
+          }
+
+          if (sellSub === "naked") {
+            const strike = g("nakStrike"),
+              prem = g("nakPremium"),
+              margin = g("nakMargin");
+            if (!strike || !prem) {
+              clearResults();
+              return;
+            }
+            wrn.textContent =
+              "⚠ Naked options carry theoretically unlimited loss on calls, or up to (strike − premium) × 100 on puts. Size carefully.";
+            show("warn", true);
+            const maxLossPut = (strike - prem) * 100;
+            const byRisk = Math.floor(dollarRisk / maxLossPut);
+            const byMargin = margin ? Math.floor(dollarRisk / margin) : null;
+            const contracts = byMargin ? Math.min(byRisk, byMargin) : byRisk;
+            showResults(
+              "Contracts",
+              contracts < 1 ? "< 1" : contracts.toLocaleString(),
+              "contracts",
+              "Max loss (put)",
+              fmt(maxLossPut * Math.max(contracts, 1), 0),
+              "if stock → 0",
+              "Sell",
+              "tag-sell",
+              [
+                [
+                  "Premium collected",
+                  fmt(prem * 100 * Math.max(contracts, 1), 0),
+                ],
+                ["Max loss/contract", fmt(maxLossPut, 0)],
+                ...(margin
+                  ? [["Margin used", fmt(margin * Math.max(contracts, 1), 0)]]
+                  : []),
+              ],
+            );
+            return;
+          }
+        }
       }
 
       function setRisk(v) {
-        const el = document.getElementById("riskPct");
-        el.value = v;
+        document.getElementById("riskPct").value = v;
         localStorage.setItem("ps_riskPct", v);
         calc();
       }
 
-      ids.forEach((id) => {
-        document.getElementById(id).addEventListener("input", (e) => {
-          localStorage.setItem("ps_" + id, e.target.value);
-          calc();
-        });
+      allIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el)
+          el.addEventListener("input", (e) => {
+            localStorage.setItem("ps_" + id, e.target.value);
+            calc();
+          });
       });
 
       function resetAll() {
-        ids.forEach((id) => {
+        allIds.forEach((id) => {
           localStorage.removeItem("ps_" + id);
-          document.getElementById(id).value = "";
+          const el = document.getElementById(id);
+          if (el) el.value = "";
         });
-        localStorage.removeItem("ps_dir");
-        dir = "long";
-        setDir("long");
-        document.getElementById("results").style.display = "none";
-        document.getElementById("error").style.display = "none";
+        localStorage.removeItem("ps_mode");
+        localStorage.removeItem("ps_sellsub");
+        mode = "long";
+        sellSub = "covered";
+        setMode("long");
       }
 
-      ids.forEach((id) => {
+      allIds.forEach((id) => {
         const v = localStorage.getItem("ps_" + id);
-        if (v) document.getElementById(id).value = v;
+        const el = document.getElementById(id);
+        if (v && el) el.value = v;
       });
-      setDir(dir);
+      setMode(mode);
+      if (mode === "sell") setSell(sellSub);
       calc();
     </script>
   </body>
